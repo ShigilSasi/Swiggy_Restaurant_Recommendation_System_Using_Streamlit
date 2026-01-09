@@ -1,2 +1,6 @@
 *.pkl
+*.csv
+*.parquet
+*.joblib
+*.pkl
 
