@@ -2,6 +2,11 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Global chart size (SAME FOR ALL)
+CHART_SIZE = (6, 4)
 
 # -----------------------------------
 # Load Data
@@ -19,23 +24,20 @@ cleaned_df = cleaned_df.reset_index(drop=True)
 final_df = final_df.reset_index(drop=True).fillna(0)
 
 # -----------------------------------
-# Streamlit UI
+# UI
 # -----------------------------------
 st.set_page_config(page_title="🍽 Restaurant Recommender", layout="wide")
-
 st.title("🍕 Swiggy Restaurant Recommendation System")
 st.markdown("Find the **best restaurants** by selecting a city and cuisine.")
 
 # -----------------------------------
-# Sidebar Filters
+# Sidebar
 # -----------------------------------
 st.sidebar.header("🔍 Filters")
 
-# City
-cities = sorted(cleaned_df["city"].dropna().astype(str).unique().tolist())
+cities = sorted(cleaned_df["city"].dropna().astype(str).unique())
 selected_city = st.sidebar.selectbox("Select City", cities)
 
-# Get cuisines only for selected city
 city_df = cleaned_df[cleaned_df["city"] == selected_city]
 
 city_cuisines = set()
@@ -43,10 +45,7 @@ for val in city_df["cuisine"].dropna():
     for c in val.split(","):
         city_cuisines.add(c.strip())
 
-city_cuisines = sorted(city_cuisines)
-
-selected_cuisine = st.sidebar.selectbox("Select Cuisine", city_cuisines)
-
+selected_cuisine = st.sidebar.selectbox("Select Cuisine", sorted(city_cuisines))
 top_k = st.sidebar.slider("Number of Restaurants", 5, 20, 10)
 
 # -----------------------------------
@@ -55,34 +54,25 @@ top_k = st.sidebar.slider("Number of Restaurants", 5, 20, 10)
 def recommend_by_city_and_cuisine(city, cuisine, k=10):
 
     col_name = f"cuisine_{cuisine}"
-
     if col_name not in final_df.columns:
         return None
 
-    # Get restaurants in selected city
     city_indices = cleaned_df[cleaned_df["city"] == city].index
-
-    # Subset ML vectors
     city_vectors = final_df.loc[city_indices]
 
-    # Create cuisine query
     query = np.zeros(final_df.shape[1])
     query[final_df.columns.get_loc(col_name)] = 1
 
-    # Cosine similarity
     similarities = cosine_similarity([query], city_vectors)[0]
 
-    # Larger candidate pool
     top_indices = similarities.argsort()[-200:][::-1]
     selected_indices = city_indices[top_indices]
 
     results = cleaned_df.loc[selected_indices].copy()
     results["similarity"] = similarities[top_indices]
 
-    # HARD filter by cuisine
     results = results[results["cuisine"].str.contains(cuisine, case=False, na=False)]
 
-    # Rank best restaurants
     results = results.sort_values(
         by=["rating", "rating_count", "similarity"],
         ascending=[False, False, False]
@@ -107,5 +97,64 @@ if st.sidebar.button("🔎 Recommend"):
             use_container_width=True
         )
 
+        # -----------------------------------
+        # Visualizations
+        # -----------------------------------
+        st.subheader("📊 Restaurant Insights")
+
+        col1, col2 = st.columns(2)
+
+        # ⭐ Ratings Chart
+        with col1:
+            fig, ax = plt.subplots(figsize=CHART_SIZE)
+            sns.barplot(data=results, x="rating", y="name", ax=ax)
+            ax.set_title("Restaurant Ratings")
+            ax.set_xlabel("Rating")
+            ax.set_ylabel("")
+            st.pyplot(fig)
+
+        # 💰 Cost Distribution
+        with col2:
+            fig, ax = plt.subplots(figsize=CHART_SIZE)
+            sns.histplot(results["cost"], bins=8, kde=True, ax=ax)
+            ax.set_title("Cost Distribution")
+            ax.set_xlabel("Cost for Two")
+            ax.legend(["Cost"])
+            st.pyplot(fig)
+
+        col3, col4 = st.columns(2)
+
+        # ⭐ Rating vs Popularity
+        with col3:
+            fig, ax = plt.subplots(figsize=CHART_SIZE)
+            sns.scatterplot(
+                data=results,
+                x="rating",
+                y="rating_count",
+                size="cost",
+                sizes=(40, 300),
+                legend=False,
+                ax=ax
+            )
+            ax.set_title("Rating vs Popularity")
+            ax.set_xlabel("Rating")
+            ax.set_ylabel("Rating Count")
+            st.pyplot(fig)
+
+        # 🍽 Cuisine Composition
+        with col4:
+            cuisine_counts = results["cuisine"].str.split(",").explode().value_counts()
+
+            fig, ax = plt.subplots(figsize=CHART_SIZE)
+            ax.pie(
+                cuisine_counts,
+                labels=cuisine_counts.index,
+                autopct="%1.0f%%",
+                startangle=90
+            )
+            ax.set_title("Cuisine Mix")
+            st.pyplot(fig)
+
+# Footer
 st.markdown("---")
 st.markdown("Built with ❤️ using Machine Learning & Streamlit")
