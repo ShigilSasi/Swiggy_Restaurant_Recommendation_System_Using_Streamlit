@@ -73,14 +73,17 @@ Results are sorted by:
 ## Installation
 
 Clone the Repository
---git clone https://github.com/yourusername/swiggy-recommender.git
---cd swiggy-recommender
+
+git clone https://github.com/yourusername/swiggy-recommender.git
+cd swiggy-recommender
 
 Install Dependencies
---pip install streamlit pandas numpy scikit-learn matplotlib seaborn
+
+pip install streamlit pandas numpy scikit-learn matplotlib seaborn
 
 Run the Application
---streamlit run app.py
+
+streamlit run app.py
 
 ## Technologies Used
 | Technology          | Purpose           |
