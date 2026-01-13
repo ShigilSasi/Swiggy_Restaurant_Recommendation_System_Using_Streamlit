@@ -27,13 +27,13 @@ final_df = final_df.reset_index(drop=True).fillna(0)
 # UI
 # -----------------------------------
 st.set_page_config(page_title="🍽 Restaurant Recommender", layout="wide")
-st.title("🍕 Swiggy Restaurant Recommendation System")
+st.title("Swiggy Restaurant Recommendation System")
 st.markdown("Find the **best restaurants** by selecting a city and cuisine.")
 
 # -----------------------------------
 # Sidebar
 # -----------------------------------
-st.sidebar.header("🔍 Filters")
+st.sidebar.header("Filters")
 
 cities = sorted(cleaned_df["city"].dropna().astype(str).unique())
 selected_city = st.sidebar.selectbox("Select City", cities)
@@ -83,7 +83,7 @@ def recommend_by_city_and_cuisine(city, cuisine, k=10):
 # -----------------------------------
 # Run Recommendation
 # -----------------------------------
-if st.sidebar.button("🔎 Recommend"):
+if st.sidebar.button("Recommend"):
 
     results = recommend_by_city_and_cuisine(selected_city, selected_cuisine, top_k)
 
@@ -100,11 +100,11 @@ if st.sidebar.button("🔎 Recommend"):
         # -----------------------------------
         # Visualizations
         # -----------------------------------
-        st.subheader("📊 Restaurant Insights")
+        st.subheader("Restaurant Insights")
 
         col1, col2 = st.columns(2)
 
-        # ⭐ Ratings Chart
+        # Ratings Chart
         with col1:
             fig, ax = plt.subplots(figsize=CHART_SIZE)
             sns.barplot(data=results, x="rating", y="name", ax=ax)
@@ -113,7 +113,7 @@ if st.sidebar.button("🔎 Recommend"):
             ax.set_ylabel("")
             st.pyplot(fig)
 
-        # 💰 Cost Distribution
+        # Cost Distribution
         with col2:
             fig, ax = plt.subplots(figsize=CHART_SIZE)
             sns.histplot(results["cost"], bins=8, kde=True, ax=ax)
@@ -124,37 +124,6 @@ if st.sidebar.button("🔎 Recommend"):
 
         col3, col4 = st.columns(2)
 
-        # ⭐ Rating vs Popularity
-        with col3:
-            fig, ax = plt.subplots(figsize=CHART_SIZE)
-            sns.scatterplot(
-                data=results,
-                x="rating",
-                y="rating_count",
-                size="cost",
-                sizes=(40, 300),
-                legend=False,
-                ax=ax
-            )
-            ax.set_title("Rating vs Popularity")
-            ax.set_xlabel("Rating")
-            ax.set_ylabel("Rating Count")
-            st.pyplot(fig)
-
-        # 🍽 Cuisine Composition
-        with col4:
-            cuisine_counts = results["cuisine"].str.split(",").explode().value_counts()
-
-            fig, ax = plt.subplots(figsize=CHART_SIZE)
-            ax.pie(
-                cuisine_counts,
-                labels=cuisine_counts.index,
-                autopct="%1.0f%%",
-                startangle=90
-            )
-            ax.set_title("Cuisine Mix")
-            st.pyplot(fig)
-
 # Footer
 st.markdown("---")
-st.markdown("Built with ❤️ using Machine Learning & Streamlit")
+
